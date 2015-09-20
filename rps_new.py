@@ -297,8 +297,11 @@ class RPSGame(Listener):
         return pose_human != '' and pose_ai != ''
     
     def decide_outcome(self):
+        # start post_game
         self.state = 'post game'
         self.set_json_var('game_state', 'post game')
+        self.countdown_timer = self.time_intergame
+        
         winner = 0
         if (pose_human == pose_ai): 
             winner = 0
@@ -318,6 +321,8 @@ class RPSGame(Listener):
         self.ai.update_with_game_outcome(pose_ai, pose_human, outcome)
                   
         if winner != 0: self.give_game(winner)
+        
+        
     def give_game(self, player_num):
         
         #if player_num == 2: self.lose(1)
@@ -336,10 +341,6 @@ class RPSGame(Listener):
         # if self.player_scores[player_num-1] == 5:
         #     self.give_match(player_num)
         #     return
-        # start post_game
-        self.state = 'post game'
-        self.set_json_var('game_state', 'post game')
-        self.countdown_timer = self.time_intergame
         
     def give_match(self, player_num):
         self.state = 'post match'
