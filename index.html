@@ -16,11 +16,7 @@
     <div id="container">
     </div>
     <script type="text/jsx">
-<<<<<<< HEAD
-     ResetScore = function(){
-=======
       ResetScore = function(){
->>>>>>> bd52fdd01a667522a1994b5136516fa804165dde
          $.ajax({
             url: "reset",
             dataType: 'json',
@@ -89,12 +85,21 @@
             <div className="col s6 m6 l6">
               <div className="card cyan z-depth-3">
                 <div className="card-content white-text activator">
-                  <span className="card-title activator">{this.props.player} {this.props.input ? this.props.input : 'Awaiting input'}</span>
+                  <span className="card-title activator">{this.props.player} {this.props.input ? this.parse(this.props.input) : 'Awaiting input'}</span>
                   <p style={{fontSize:'500%'}}>{this.props.score}</p>
                 </div>              
               </div>
             </div>
           );
+        },
+        parse: function(s){
+          if (s == 'r'){
+            return "Rock";
+          } else if (s == 'p'){
+            return "Paper";
+          } else {
+            return "Scissors";
+          }
         }
       });
 
