@@ -244,6 +244,8 @@ class RPSGame(Listener):
             self.update_countdown(elapsed_secs)
         elif self.state == 'posing':    # Posing
             if self.both_players_posed():
+                self.set_json_var('pose_ai', pose_ai)
+                self.set_json_var('pose_human', pose_human)
                 self.decide_outcome()    
         elif self.state == 'post game':    # Post Gameprint("connected player1 ")
             self.update_postgame(elapsed_secs)
@@ -263,10 +265,16 @@ class RPSGame(Listener):
         self.start_next_game() 
         self.set_json_var("score_p1", 0)
         self.set_json_var("score_p2", 0)
+        self.set_json_var('pose_ai', pose_ai)
+        self.set_json_var('pose_human', pose_human)
 
     def start_next_game(self):
         global pose_human
-        pose_human = ""
+        pose_human = ''
+        pose_ai = ''
+        self.set_json_var('pose_ai', pose_ai)
+        self.set_json_var('pose_human', pose_human)
+        
         self.state = 'countdown'
         self.set_json_var('game_state', 'countdown')
         self.countdown_timer = self.countdown_timer_max
