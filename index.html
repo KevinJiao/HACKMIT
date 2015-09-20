@@ -16,20 +16,6 @@
     <div id="container">
     </div>
     <script type="text/jsx">
-      ResetScore = function(){
-         $.ajax({
-            url: "reset",
-            dataType: 'json',
-            type: 'POST',
-            cache: false,
-            success: function(data) {
-              console.log(data)
-            }.bind(this),
-            error: function(xhr, status, err) {
-              console.error(err);
-            }.bind(this)
-          });
-      }
       var NavBar = React.createClass({
         render: function() {
           return (
@@ -117,8 +103,7 @@
               <Scoreboard />
               <div className="container">
               <div className="row" >
-              <a href="http://127.0.0.1:8801/beaker/#/session/OoBAGz" target="_blank" className="col s6 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">assessment</i>View Statistics</a>
-              <a href="#reset" className="col s6 center light-blue waves-effect waves-light btn-large" onClick={ResetScore}><i className="material-icons right">autorenew</i>Reset</a>
+              <a href="http://127.0.0.1:8801/beaker/#/session/OoBAGz" target="_blank" className="col s12 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">assessment</i>View Statistics</a>
               </div>
               </div>
             </div>
