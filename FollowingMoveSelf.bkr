@@ -50,7 +50,7 @@
                 "body": [
                     "library(ggplot2)",
                     "library(\"rjson\")",
-                    "json_file <- \"/Users/khsia/Desktop/Hack/HACKMIT/data.json\"",
+                    "json_file <- \"/Users/khsia/Desktop/Hack/myo-python/HACKMIT/data.json\"",
                     "json_data <- fromJSON(file=json_file)",
                     "player1<-c(json_data$p1_hist)",
                     "player2<-c(json_data$p2_hist)",
