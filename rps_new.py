@@ -140,9 +140,11 @@ class Listener(libmyo.device_listener.Feed):
         super(Listener, self).__init__()
         self.pose = None
 
+        self.myo = None
+
         self.last_time = 0
-        self.id_p1=0
-        self.id_p2=0
+        self.player = None
+   
         #pose_ai = ''
         #pose_human = ''
 
@@ -150,17 +152,15 @@ class Listener(libmyo.device_listener.Feed):
 
         self.player_history = [[],[]]
 
-    def on_connect(self, myo, timestamp, firmware_version):
-        myo.vibrate('short')
-        myo.vibrate('short')
+    def on_connect(self, myo_arg, timestamp, firmware_version):
         
-
-        if not self.id_p1:
-            print("connected player1 ")
-            self.id_p1 = myo.value;
-        elif not self.id_p2:
-            print("connected player 2")
-            self.id_p2 = myo.value;
+        if not self.player:
+            global myo
+            myo = myo_arg
+            #print(self.myo)
+            vibrate_notify_connection(myo)
+            print("connected player ")
+            self.player= myo.value;
 
     def on_rssi(self, myo, timestamp, rssi):
         self.rssi = rssi
@@ -193,32 +193,39 @@ class Listener(libmyo.device_listener.Feed):
 
         #print(self.player_poses)
 
-    def on_orientation_data(self, myo, timestamp, orientation):
-        self.orientation = orientation
-
-    def on_accelerometor_data(self, myo, timestamp, acceleration):
-        pass
-
-    def on_gyroscope_data(self, myo, timestamp, gyroscope):
-        pass
-
-    def on_emg_data(self, myo, timestamp, emg):
-        self.emg = emg
-
-    def on_unlock(self, myo, timestamp):
-        self.locked = False
-
-    def on_lock(self, myo, timestamp):
-        self.locked = True
-
-
+def vibrate_lose(myo):
+    myo.vibrate('long')
+    myo.vibrate('long')
+    
+def vibrate_win(myo):
+    myo.vibrate('short')
+    time.sleep(0.5)
+    myo.vibrate('short')
+    time.sleep(0.5)
+    myo.vibrate('short')
+    time.sleep(0.5)
+    myo.vibrate('short')
+    time.sleep(0.5) 
+    myo.vibrate('short')
+    time.sleep(0.5)
+    
+def vibrate_notify_connection(myo):
+    myo.vibrate('short')
+    time.sleep(1)
+    myo.vibrate('long')
+    time.sleep(1)
+    myo.vibrate('short')
+    
+def vibrate_tie(myo):
+    myo.vibrate('short')
         
 
 class RPSGame(Listener):
     def __init__(self):
         super(RPSGame, self).__init__()
+
         self.listener_changed = False
-        
+
         self.ai = AIPlayer()
         
         # countdown, posing, post game, post match, main menu
@@ -243,7 +250,7 @@ class RPSGame(Listener):
         elif self.state == 'posing':    # Posing
             if self.both_players_posed():
                 self.decide_outcome()    
-        elif self.state == 'post game':    # Post Game
+        elif self.state == 'post game':    # Post Gameprint("connected player1 ")
             self.update_postgame(elapsed_secs)
         elif self.state == 'post match':    # Post Match
             self.update_post_match()
@@ -288,27 +295,38 @@ class RPSGame(Listener):
         winner = 0
         if (pose_human == pose_ai): 
             winner = 0
+            vibrate_tie(myo)
         elif (pose_human == 'r' and pose_ai == 's') or \
              (pose_human == 's' and pose_ai == 'p') or \
              (pose_human == 'p' and pose_ai == 'r'):
-             # game player 1
+             # game human
              winner = 1
+             vibrate_win(myo)
         else:
-            # game player 2
-            winner = 2        
+            # game ai
+            winner = 2
+            vibrate_lose(myo)        
             
         outcome = 'w' if winner == 2 else ('l' if winner == 1 else 'd')
         self.ai.update_with_game_outcome(pose_ai, pose_human, outcome)
                   
         if winner != 0: self.give_game(winner)
-            
     def give_game(self, player_num):
         
-        print('give game to player' + str(player_num))
+        #if player_num == 2: self.lose(1)
+        
+        #print(self.player_scores[player_num-1])
         
         # scores
         self.player_scores[player_num-1] += 1
-        if self.player_scores[player_num-1] == 3:
+        print(self.player_scores[player_num-1])
+
+        if player_num == 1:
+            self.set_json_var("score_p1", self.player_scores[player_num-1])
+        if player_num == 2:
+            self.set_json_var("score_p2", self.player_scores[player_num-1])
+
+        if self.player_scores[player_num-1] == 5:
             self.give_match(player_num)
             return
         # start post_game
@@ -337,26 +355,26 @@ class RPSGame(Listener):
             self.start_new_match()
             
     def set_json_var(self, id, value):      
-        pass
-        #with open('data.json', 'r+') as f:
-            #data = json.load(f)
-            #data[id] = value # <--- add `id` value.
-            #f.seek(0)        # <--- should reset file position to the beginning.
-            #json.dump(data, f, indent=4)
-    
+        with open('data.json', 'r') as f:
+            data = json.load(f)
+            data[id] = value # <--- add `id` value.
+
+        with open('data.json', 'w') as f:
+            f.write(json.dumps(data))
+            
     def get_json_var(self, id):
-        with open('data.json', 'r+') as f:
+        with open('data.json', 'r') as f:
             data = json.load(f)
             return data[id]
+
+    
+
+    
 
 
 
 def main():
-    print("Connecting to Myo ... Use CTRL^C to exit.")
-    print("If nothing happens, make sure the Bluetooth adapter is plugged in,")
-    print("Myo Connect is running and your Myo is put on.")
-    
-    #feed = libmyo.device_listener.Feed()
+
     rps_game = RPSGame()
     hub = libmyo.Hub()
     hub.set_locking_policy(libmyo.LockingPolicy.none)
