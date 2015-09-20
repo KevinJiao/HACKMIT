@@ -246,8 +246,10 @@ class RPSGame(Listener):
             if self.both_players_posed():
                 self.set_json_var('pose_ai', pose_ai)
                 self.set_json_var('pose_human', pose_human)
-                self.set_json_var('p1_hist', self.get_json_var('p1_hist').append(pose_human))
-                self.set_json_var('p2_hist', self.get_json_var('p2_hist').append(pose_ai))
+                self.player_history[0].append(pose_human)
+                self.player_history[1].append(pose_ai)
+                self.set_json_var('p1_hist', self.player_history[0])
+                self.set_json_var('p2_hist', self.player_history[1])
                 
                 self.decide_outcome()    
         elif self.state == 'post game':    # Post Gameprint("connected player1 ")
@@ -265,11 +267,16 @@ class RPSGame(Listener):
         self.player_scores = [0, 0]
         pose_human = ''
         pose_ai = '' 
+        self.player_history[0] = []
+        self.player_history[1] = []
+        
         self.start_next_game() 
         self.set_json_var("score_p1", 0)
         self.set_json_var("score_p2", 0)
         self.set_json_var('pose_ai', pose_ai)
         self.set_json_var('pose_human', pose_human)
+        self.set_json_var('p1_hist', self.player_history[0])
+        self.set_json_var('p2_hist', self.player_history[1])
 
     def start_next_game(self):
         global pose_human
