@@ -30,19 +30,21 @@ import time
 import sys
 import random
 
+pose_human=''
+pose_ai=''
 
 
 class GameInfo(object):
     def __init__(self):
         # poses are  'r', 'p', or 's' ('' means non existing game)
-        self.pose_ai = ''  
-        self.pose_human = ''
+        #pose_ai = ''  
+        #pose_human = ''
         
         # outcome is 'w', 'l', 'd' ('' means non existing game)
         self.outcome = '' 
     
     def __str__(self):
-        return self.pose_ai + self.pose_human + self.outcome
+        return pose_ai + pose_human + self.outcome
     
 class AIPlayer(object):
     
@@ -141,14 +143,18 @@ class Listener(libmyo.device_listener.Feed):
         self.last_time = 0
         self.id_p1=0
         self.id_p2=0
-        self.player_poses = ['','']
+        #pose_ai = ''
+        #pose_human = ''
+
+
+
         self.player_history = [[],[]]
 
     def on_connect(self, myo, timestamp, firmware_version):
         myo.vibrate('short')
         myo.vibrate('short')
         
-        
+
         if not self.id_p1:
             print("connected player1 ")
             self.id_p1 = myo.value;
@@ -160,7 +166,8 @@ class Listener(libmyo.device_listener.Feed):
         self.rssi = rssi
 
     def on_pose(self, myo, timestamp, pose):
-        print(pose)
+        global pose_human
+        #print(pose)
         self.pose = pose
         if pose == "fingers_spread":
             pose = "p"
@@ -171,15 +178,16 @@ class Listener(libmyo.device_listener.Feed):
         else:
             return
 
-        if  myo.value == self.id_p1 :
-            print "here"
-            print player_poses
-            self.player_poses[0] = pose
-            self.player_history[0].append(pose)
-            myo.vibrate('short')
+        
+        #print("here")
+        #print(self.player_poses)
+        pose_human = pose
+        #print (pose_human)
+        self.player_history[0].append(pose)
+        myo.vibrate('short')
 
         #elif myo.value == self.id_p2:
-         #   self.player_poses[1] = pose
+         #   pose_ai = pose
           #  self.player_history[1].append(pose)
            # myo.vibrate('short')
 
@@ -228,7 +236,6 @@ class RPSGame(Listener):
         self.start_new_match()
         #print(self.player_poses)
         
-        
     def update(self, elapsed_secs):
         #print(self.player_poses)
         if self.state == 'countdown':      # Countdown
@@ -237,7 +244,7 @@ class RPSGame(Listener):
             if self.both_players_posed():
                 self.decide_outcome()    
         elif self.state == 'post game':    # Post Game
-            self.update_postgame()
+            self.update_postgame(elapsed_secs)
         elif self.state == 'post match':    # Post Match
             self.update_post_match()
         elif self.state == 'main menu':    # Main Menu
@@ -246,9 +253,11 @@ class RPSGame(Listener):
             return
 
     def start_new_match(self):
+        global pose_human, pose_ai
         self.ai = AIPlayer()
         self.player_scores = [0, 0]
-        self.player_poses = ['','']  
+        pose_human = ''
+        pose_ai = '' 
         self.start_next_game() 
 
     def start_next_game(self):
@@ -257,26 +266,31 @@ class RPSGame(Listener):
         self.countdown_timer = self.countdown_timer_max
     
     def update_countdown(self, elapsed_secs):
+        global pose_ai
         self.countdown_timer -= elapsed_secs
         if self.countdown_timer <= 0:
             print('OK pose now...')
             self.state = 'posing'
             self.set_json_var('game_state', 'posing')
-            self.player_poses[1] = self.ai.get_pose_choice()
+            pose_ai = self.ai.get_pose_choice()
 
     
     def both_players_posed(self):
-        return self.player_poses[0] != '' and self.player_poses[1] != ''
+        #print("values human")
+        #print(pose_human)
+        #print("values ai")
+        #print(pose_ai)
+        return pose_human != '' and pose_ai != ''
     
     def decide_outcome(self):
         self.state = 'post game'
         self.set_json_var('game_state', 'post game')
         winner = 0
-        if (self.player_poses[0] == self.player_poses[1]): 
+        if (pose_human == pose_ai): 
             winner = 0
-        elif (self.player_poses[0] == 'r' and self.player_poses[1] == 's') or \
-             (self.player_poses[0] == 's' and self.player_poses[1] == 'p') or \
-             (self.player_poses[0] == 'p' and self.player_poses[1] == 'r'):
+        elif (pose_human == 'r' and pose_ai == 's') or \
+             (pose_human == 's' and pose_ai == 'p') or \
+             (pose_human == 'p' and pose_ai == 'r'):
              # game player 1
              winner = 1
         else:
@@ -284,9 +298,9 @@ class RPSGame(Listener):
             winner = 2        
             
         outcome = 'w' if winner == 2 else ('l' if winner == 1 else 'd')
-        ai.update_with_game_outcome(self.player_poses[1], self.player_poses[0], outcome)
+        self.ai.update_with_game_outcome(pose_ai, pose_human, outcome)
                   
-        if winner != 0: give_game(winner)
+        if winner != 0: self.give_game(winner)
             
     def give_game(self, player_num):
         
@@ -295,7 +309,7 @@ class RPSGame(Listener):
         # scores
         self.player_scores[player_num-1] += 1
         if self.player_scores[player_num-1] == 3:
-            give_match(player_num)
+            self.give_match(player_num)
             return
         # start post_game
         self.state = 'post game'
@@ -309,7 +323,7 @@ class RPSGame(Listener):
     def update_postgame(self, elapsed_secs):
         self.countdown_timer -= elapsed_secs
         if self.countdown_timer <= 0:
-            start_next_game()
+            self.start_next_game()
             
     def update_post_match(self):
         # query Json for state change
