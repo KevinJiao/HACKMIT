@@ -1,6 +1,6 @@
 {
-    "game_state": "countdown", 
-    "score_p1": 1, 
+    "game_state": "countdown", // main menu, countdown, posing, post game, post match
+    "score_p1": 1,    
     "score_p2": 0,
     "p1_hist":["r", "s", "p", "s", "p", "p", "r", "s", "p", "p", "r", "p", "p", "s", "r", "r", "s", "r", "s", "s", "p", "s", "p", "p", "p", "p", "p", "p", "p", "p", "p", "r", "r", "s", "r", "p", "p", "p", "p", "p"],
     "p2_hist":["p", "p", "p", "s", "p", "p", "p", "p", "s", "p", "p", "r", "s", "p", "s", "s", "p", "p", "p", "p", "p", "r", "p", "p", "r", "p", "s", "s", "p", "s", "r", "p", "p", "p", "p", "p", "r", "s", "s", "p"]
