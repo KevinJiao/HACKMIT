@@ -69,6 +69,13 @@
             dataType: 'json',
             cache: false,
             success: function(data) {
+              console.log(this.state.score_p1);
+              console.log(data.score_p1);
+              if (data.score_p1 > this.state.score_p1 ){
+                Materialize.toast("Player won!", 4000);
+              }else if (data.score_p2 > this.state.score_p2){
+                Materialize.toast("AI won!", 4000);
+              }
               this.setState(data);
             }.bind(this),
             error: function(xhr, status, err) {
