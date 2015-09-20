@@ -16,7 +16,22 @@
     <div id="container">
     </div>
     <script type="text/jsx">
+      ResetScore = function(){
+         $.ajax({
+            url: "reset",
+            dataType: 'json',
+            type: 'POST',
+            cache: false,
+            success: function(data) {
+              console.log(data)
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.error(err);
+            }.bind(this)
+          });
+      }
       var NavBar = React.createClass({
+
         render: function() {
           return (
             <nav className="light-blue" role="navigation">
