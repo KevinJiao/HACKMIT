@@ -1,5 +1,5 @@
 {
-game_state:"main menu",
-score_p1:0
-score_p2:0
+    "game_state": "countdown", 
+    "score_p1": 0, 
+    "score_p2": 0
 }
