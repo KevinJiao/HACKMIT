@@ -4,6 +4,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/JSXTransformer.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.1/js/materialize.min.js"></script>
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection"/>
@@ -40,8 +41,8 @@
           return(
             <div className="container col s12 m12 l12">
               <div className="row">
-                <ScoreCard player="1" score = {this.state.score_p1}/>
-                <ScoreCard player="2" score = {this.state.score_p2}/>
+                <ScoreCard player="Player" score = {this.state.score_p1}/>
+                <ScoreCard player="AI" score = {this.state.score_p2}/>
               </div>
             </div>
           )
@@ -65,14 +66,11 @@
         render: function(){
           return (
             <div className="col s6 m6 l6">
-              <div className="card blue-grey darken-1">
-                <div className="card-content white-text">
-                  <span className="card-title">Player {this.props.player}</span>
+              <div className="card cyan z-depth-3">
+                <div className="card-content white-text activator">
+                  <span className="card-title activator">{this.props.player}</span>
                   <p style={{fontSize:'500%'}}>{this.props.score}</p>
-                </div>
-                <div className="card-action">
-                  <a href="#">Reset</a>
-                </div>
+                </div>              
               </div>
             </div>
           );
@@ -85,11 +83,31 @@
             <div>
               <NavBar />
               <Scoreboard />
+              <div className="container">
+              <div className="row" >
+              <a className="col s6 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">assessment</i>View Statistics</a>
+              <a className="col s6 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">autorenew</i>Reset</a>
+              </div>
+              </div>
             </div>
           )
         }
       })
       React.render(<App />, document.getElementById('container'));
+
+      ResetScore = function(){
+         $.ajax({
+            url: "data.json",
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+              this.setState(data);
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+            }.bind(this)
+          });
+      }
     </script>
   </body>
 </html>
