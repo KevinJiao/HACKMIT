@@ -246,6 +246,9 @@ class RPSGame(Listener):
             if self.both_players_posed():
                 self.set_json_var('pose_ai', pose_ai)
                 self.set_json_var('pose_human', pose_human)
+                self.set_json_var('p1_hist', self.get_json_var('p1_hist').append(pose_human))
+                self.set_json_var('p2_hist', self.get_json_var('p2_hist').append(pose_ai))
+                
                 self.decide_outcome()    
         elif self.state == 'post game':    # Post Gameprint("connected player1 ")
             self.update_postgame(elapsed_secs)
