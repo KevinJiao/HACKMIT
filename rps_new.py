@@ -140,6 +140,8 @@ class Listener(libmyo.device_listener.Feed):
         super(Listener, self).__init__()
         self.pose = None
 
+        self.myo = None
+
         self.last_time = 0
         self.id_p1=0
         self.id_p2=0
@@ -151,16 +153,12 @@ class Listener(libmyo.device_listener.Feed):
         self.player_history = [[],[]]
 
     def on_connect(self, myo, timestamp, firmware_version):
-        myo.vibrate('short')
-        myo.vibrate('short')
         
-
         if not self.id_p1:
             print("connected player1 ")
+            self.myo = myo
+            self.vibrate_notify_connection(myo)
             self.id_p1 = myo.value;
-        elif not self.id_p2:
-            print("connected player 2")
-            self.id_p2 = myo.value;
 
     def on_rssi(self, myo, timestamp, rssi):
         self.rssi = rssi
@@ -211,7 +209,31 @@ class Listener(libmyo.device_listener.Feed):
     def on_lock(self, myo, timestamp):
         self.locked = True
 
-
+    def vibrate_lose(myo):
+        myo.vibrate('long')
+        myo.vibrate('long')
+    
+    def vibrate_win(myo):
+        myo.vibrate('short')
+        time.sleep(0.5)
+        myo.vibrate('short')
+        time.sleep(0.5)
+        myo.vibrate('short')
+        time.sleep(0.5)
+        myo.vibrate('short')
+        time.sleep(0.5) 
+        myo.vibrate('short')
+        time.sleep(0.5)
+    
+    def vibrate_notify_connection(myo):
+        myo.vibrate('short')
+        time.sleep(1)
+        myo.vibrate('long')
+        time.sleep(1)
+        myo.vibrate('short')
+    
+    def vibrate_tie(myo):
+        myo.vibrate('short')
         
 
 class RPSGame(Listener):
@@ -288,14 +310,17 @@ class RPSGame(Listener):
         winner = 0
         if (pose_human == pose_ai): 
             winner = 0
+            self.vibrate_tie(self.myo)
         elif (pose_human == 'r' and pose_ai == 's') or \
              (pose_human == 's' and pose_ai == 'p') or \
              (pose_human == 'p' and pose_ai == 'r'):
-             # game player 1
+             # game human
              winner = 1
+             self.vibrate_win(self.myo)
         else:
-            # game player 2
-            winner = 2        
+            # game ai
+            winner = 2
+            self.vibrate_lose(self.myo)        
             
         outcome = 'w' if winner == 2 else ('l' if winner == 1 else 'd')
         self.ai.update_with_game_outcome(pose_ai, pose_human, outcome)
@@ -303,6 +328,8 @@ class RPSGame(Listener):
         if winner != 0: self.give_game(winner)
             
     def give_game(self, player_num):
+        
+        if player_num == 2: self.lose(1)
         
         print('give game to player' + str(player_num))
         
@@ -348,6 +375,10 @@ class RPSGame(Listener):
         with open('data.json', 'r+') as f:
             data = json.load(f)
             return data[id]
+
+    
+
+    
 
 
 
