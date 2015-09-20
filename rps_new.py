@@ -48,6 +48,9 @@ class Listener(libmyo.device_listener.Feed):
         self.last_time = 0
         self.id_p1=0
         self.id_p2=0
+        self.player_poses = ['','']
+        self.player_history = [[],[]]
+
 
     def output(self):
         ctime = time.time()
@@ -85,7 +88,26 @@ class Listener(libmyo.device_listener.Feed):
         self.rssi = rssi
 
     def on_pose(self, myo, timestamp, pose):
-        pass
+        print(pose)
+        self.pose = pose
+        if pose == "fingers_spread":
+            pose = "p"
+        elif pose == "fist":
+            pose = "r"
+        elif pose == "wave_in":
+            pose = "s"
+        else:
+            return
+
+        if  myo.value == self.id_p1 :
+            self.player_poses[0] = pose
+            self.player_history[0].append(pose)
+            myo.vibrate('short')
+
+        elif myo.value == self.id_p1:
+            self.p2_pose = pose
+            self.player_history[1].append(pose)
+            myo.vibrate('short')
 
     def on_orientation_data(self, myo, timestamp, orientation):
         self.orientation = orientation
@@ -162,19 +184,20 @@ class RPSGame(Listener):
         self.set_json_var('game_state', 'countdown')
         
         self.player_scores = [0, 0]
-        self.player_poses = ['','']
-        self.player_history = [[],[]]
+        #self.player_poses = ['','']
+        #self.player_history = [[],[]]
         
         self.countdown_timer = 0
         self.countdown_timer_max = 3 # seconds
         self.time_intergame = 2
         
         self.start_new_match()
+        print(self.player_poses)
         
         
     def update(self, elapsed_secs):
         if self.state == 'countdown':      # Countdown
-            pass
+            self.update_countdown(elapsed_secs)
         elif self.state == 'posing':    # Posing
             if self.both_players_posed():
                 self.decide_outcome()    
@@ -184,30 +207,8 @@ class RPSGame(Listener):
             self.update_post_match()
         elif self.state == 'main menu':    # Main Menu
             pass
-
-
-    def on_pose(self, myo, timestamp, pose):
-        self.pose = pose
-        if pose == "fingers_spread":
-            pose = "p"
-        elif pose == "fist":
-            pose = "r"
-        elif pose == "wave_in":
-            pose = "s"
         else:
             return
-
-        if  myo.value == self.id_p1 and self.player_poses[0] == '':
-            self.player_poses[0] = pose
-            self.player_history[0].append(pose)
-            self.listener_changed=True
-            myo.vibrate('short')
-
-        elif myo.value == self.id_p1 and self.player_poses[1] == '':
-            self.p2_pose = pose
-            self.player_history[1].append(pose)
-            myo.vibrate('short')
-            self.listener_changed=True
 
     def start_new_match(self):
         self.player_scores = [0, 0]
@@ -220,21 +221,17 @@ class RPSGame(Listener):
         self.countdown_timer = self.countdown_timer_max
     
     def update_countdown(self, elapsed_secs):
-        
-        print('countdown: ' + self.countdown_timer)
-        
         self.countdown_timer -= elapsed_secs
         if self.countdown_timer <= 0:
             self.state = 'posing'
             self.set_json_var('game_state', 'posing')
     
     def both_players_posed(self):
-        return self.pose_p1 != '' and self.pose_p2 != ''
+        return self.player_poses[0] != '' and self.player_poses[1] != ''
     
     def decide_outcome(self):
         self.state = 'post game'
         self.set_json_var('game_state', 'post game')
-        
         winner = 0
         if (self.pose_p1 == self.pose_p2): 
             winner = 0
@@ -246,33 +243,24 @@ class RPSGame(Listener):
         else:
             # game player 2
             winner = 2              
-            
         if winner != 0: give_game(winner)
             
     def give_game(self, player_num):
-        
-        print('game player' + player_num)
-        
         # scores
         self.player_scores[player_num-1] += 1
         if self.player_scores[player_num-1] == 3:
             give_match(player_num)
             return
-        
         # start post_game
         self.state = 'post game'
         self.set_json_var('game_state', 'post game')
         self.countdown_timer = self.time_intergame
         
     def give_match(self, player_num):
-        print('match player'+ player_num)
         self.state = 'post match'
         self.set_json_var('game_state', 'post match')
             
     def update_postgame(self, elapsed_secs):
-        
-        print('next game in:'+self.countdown_timer)
-        
         self.countdown_timer -= elapsed_secs
         if self.countdown_timer <= 0:
             start_next_game()
@@ -311,8 +299,8 @@ def main():
     rps_game = RPSGame()
     hub = libmyo.Hub()
     hub.set_locking_policy(libmyo.LockingPolicy.none)
-    hub.run(1000, listener)
-    
+    hub.run(1000, Listener())
+
     start_time = time.time()
     
     # Listen to keyboard interrupts and stop the hub in that case.
@@ -320,9 +308,8 @@ def main():
         while hub.running:
             elapsed_secs = time.time() - start_time
             start_time = time.time()
-            
             if (rps_game.listener_changed):
-                #print(rps_game.p1_pose, rps_game.p2_pose)
+                print(rps_game.p1_pose, rps_game.p2_pose)
                 listener.listener_changed=False
             rps_game.update(elapsed_secs)
             
