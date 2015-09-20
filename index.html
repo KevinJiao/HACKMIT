@@ -86,7 +86,7 @@
               <div className="container">
               <div className="row" >
               <a className="col s6 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">assessment</i>View Statistics</a>
-              <a className="col s6 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">autorenew</i>Reset</a>
+              <a className="col s6 center light-blue waves-effect waves-light btn-large" onClick={ResetScore}><i className="material-icons right">autorenew</i>Reset</a>
               </div>
               </div>
             </div>
@@ -97,11 +97,12 @@
 
       ResetScore = function(){
          $.ajax({
-            url: "data.json",
+            url: "reset",
             dataType: 'json',
+            type: 'POST',
             cache: false,
             success: function(data) {
-              this.setState(data);
+              console.log(data)
             }.bind(this),
             error: function(xhr, status, err) {
               console.error(this.props.url, status, err.toString());
