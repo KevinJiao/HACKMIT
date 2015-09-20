@@ -311,16 +311,22 @@ class RPSGame(Listener):
         self.ai.update_with_game_outcome(pose_ai, pose_human, outcome)
                   
         if winner != 0: self.give_game(winner)
-            
     def give_game(self, player_num):
         
         #if player_num == 2: self.lose(1)
         
-        print('give game to AI')
+        #print(self.player_scores[player_num-1])
         
         # scores
         self.player_scores[player_num-1] += 1
-        if self.player_scores[player_num-1] == 3:
+        print(self.player_scores[player_num-1])
+
+        if player_num == 1:
+            self.set_json_var("score_p1", self.player_scores[player_num-1])
+        if player_num == 2:
+            self.set_json_var("score_p2", self.player_scores[player_num-1])
+
+        if self.player_scores[player_num-1] == 5:
             self.give_match(player_num)
             return
         # start post_game
@@ -349,15 +355,15 @@ class RPSGame(Listener):
             self.start_new_match()
             
     def set_json_var(self, id, value):      
-        pass
-        #with open('data.json', 'r+') as f:
-            #data = json.load(f)
-            #data[id] = value # <--- add `id` value.
-            #f.seek(0)        # <--- should reset file position to the beginning.
-            #json.dump(data, f, indent=4)
-    
+        with open('data.json', 'r') as f:
+            data = json.load(f)
+            data[id] = value # <--- add `id` value.
+
+        with open('data.json', 'w') as f:
+            f.write(json.dumps(data))
+            
     def get_json_var(self, id):
-        with open('data.json', 'r+') as f:
+        with open('data.json', 'r') as f:
             data = json.load(f)
             return data[id]
 
