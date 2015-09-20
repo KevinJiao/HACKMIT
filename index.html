@@ -46,6 +46,10 @@
                 <ScoreCard player="Player:" score = {this.state.score_p1} input = {this.state.pose_human}/>
                 <ScoreCard player="AI:" score = {this.state.score_p2} input = {this.state.pose_ai}/>
               </div>
+              <div className="row" >
+              <a href="http://127.0.0.1:8801/beaker/#/session/OoBAGz" target="_blank" className="col s12 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">assessment</i>View Statistics</a>
+              </div>
+              <Fist game_state={this.state.game_state} />
             </div>
           )
         }, 
@@ -55,8 +59,6 @@
             dataType: 'json',
             cache: false,
             success: function(data) {
-              console.log(this.state.score_p1);
-              console.log(data.score_p1);
               if (data.score_p1 > this.state.score_p1 ){
                 Materialize.toast("Player won!", 4000);
               }else if (data.score_p2 > this.state.score_p2){
@@ -95,17 +97,22 @@
         }
       });
 
+      var Fist = React.createClass({
+        render: function(){
+          if (this.props.game_state=="countdown"){
+            return (<div className="row center">
+              <img className="center"style={{height:'600px',width:'400px'}} src="fist_anim.gif"></img></div>)
+          } else{
+            return (<div></div>)
+          }
+        }
+      })
       var App = React.createClass({
         render: function(){
           return(
             <div>
               <NavBar />
               <Scoreboard />
-              <div className="container">
-              <div className="row" >
-              <a href="http://127.0.0.1:8801/beaker/#/session/OoBAGz" target="_blank" className="col s12 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">assessment</i>View Statistics</a>
-              </div>
-              </div>
             </div>
           )
         }
