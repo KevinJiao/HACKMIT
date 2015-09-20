@@ -87,16 +87,16 @@ class AIPlayer(object):
         
         q_greedy, pose_greedy = self.find_greedy_pose(self.q_matrix, state)
         
-        if self.debug: print 'Q Matrix: ', self.q_matrix
+        #if self.debug: print('Q Matrix: ' + self.q_matrix)
         
         if random.random() <= self.greedy_chance and q_greedy > 0:
             # pick greedily
             pose = pose_greedy
-            if self.debug: print 'picks greedy - q = ' + str(q_greedy)
+            if self.debug: print('picks greedy - q = ' + str(q_greedy))
         else:
             # pick randomly
             pose = self.random_pose()
-            if self.debug: print 'picks random'
+            if self.debug: print('picks random')
             
         return pose
     
@@ -136,45 +136,19 @@ class Listener(libmyo.device_listener.Feed):
 
     def __init__(self):
         super(Listener, self).__init__()
-        self.orientation = None
-        self.pose = libmyo.Pose.rest
-        self.emg_enabled = False
-        self.locked = False
-        self.rssi = None
-        self.emg = None
-        
+        self.pose = None
+
         self.last_time = 0
         self.id_p1=0
         self.id_p2=0
         self.player_poses = ['','']
         self.player_history = [[],[]]
 
-
-    def output(self):
-        ctime = time.time()
-        if (ctime - self.last_time) < self.interval:
-            return
-        self.last_time = ctime
-
-        parts = []
-        if self.orientation:
-            for comp in self.orientation:
-                parts.append(str(comp).ljust(15))
-        parts.append(str(self.pose).ljust(10))
-        parts.append('E' if self.emg_enabled else ' ')
-        parts.append('L' if self.locked else ' ')
-        parts.append(self.rssi or 'NORSSI')
-        if self.emg:
-            for comp in self.emg:
-                parts.append(str(comp).ljust(5))
-        print('\r' + ''.join('[{0}]'.format(p) for p in parts), end='')
-        sys.stdout.flush()
-
     def on_connect(self, myo, timestamp, firmware_version):
         myo.vibrate('short')
         myo.vibrate('short')
-        myo.request_rssi()
-        myo.request_battery_level()
+        
+        
         if not self.id_p1:
             print("connected player1 ")
             self.id_p1 = myo.value;
@@ -198,14 +172,18 @@ class Listener(libmyo.device_listener.Feed):
             return
 
         if  myo.value == self.id_p1 :
+            print "here"
+            print player_poses
             self.player_poses[0] = pose
             self.player_history[0].append(pose)
             myo.vibrate('short')
 
-        elif myo.value == self.id_p1:
-            self.p2_pose = pose
-            self.player_history[1].append(pose)
-            myo.vibrate('short')
+        #elif myo.value == self.id_p2:
+         #   self.player_poses[1] = pose
+          #  self.player_history[1].append(pose)
+           # myo.vibrate('short')
+
+        #print(self.player_poses)
 
     def on_orientation_data(self, myo, timestamp, orientation):
         self.orientation = orientation
@@ -225,52 +203,8 @@ class Listener(libmyo.device_listener.Feed):
     def on_lock(self, myo, timestamp):
         self.locked = True
 
-    def on_event(self, kind, event):
-        """
-        Called before any of the event callbacks.
-        """
 
-    def on_event_finished(self, kind, event):
-        """
-        Called after the respective event callbacks have been
-        invoked. This method is *always* triggered, even if one of
-        the callbacks requested the stop of the Hub.
-        """
-
-    def on_pair(self, myo, timestamp, firmware_version):
-        """
-        Called when a Myo armband is paired.
-        """
-
-    def on_unpair(self, myo, timestamp):
-        """
-        Called when a Myo armband is unpaired.
-        """
-
-    def on_disconnect(self, myo, timestamp):
-        """
-        Called when a Myo is disconnected.
-        """
-
-    def on_arm_sync(self, myo, timestamp, arm, x_direction, rotation,
-                    warmup_state):
-        """
-        Called when a Myo armband and an arm is synced.
-        """
-    def on_arm_unsync(self, myo, timestamp):
-        """
-        Called when a Myo armband and an arm is unsynced.
-        """
-
-    def on_battery_level_received(self, myo, timestamp, level):
-        """
-        Called when the requested battery level received.
-        """
-
-    def on_warmup_completed(self, myo, timestamp, warmup_result):
-        """
-        Called when the warmup completed.
-        """
+        
 
 class RPSGame(Listener):
     def __init__(self):
@@ -292,10 +226,11 @@ class RPSGame(Listener):
         self.time_intergame = 2
         
         self.start_new_match()
-        print(self.player_poses)
+        #print(self.player_poses)
         
         
     def update(self, elapsed_secs):
+        #print(self.player_poses)
         if self.state == 'countdown':      # Countdown
             self.update_countdown(elapsed_secs)
         elif self.state == 'posing':    # Posing
@@ -324,10 +259,11 @@ class RPSGame(Listener):
     def update_countdown(self, elapsed_secs):
         self.countdown_timer -= elapsed_secs
         if self.countdown_timer <= 0:
-            print 'OK pose now...'
+            print('OK pose now...')
             self.state = 'posing'
             self.set_json_var('game_state', 'posing')
-            self.player_poses[1] = ai.get_pose_choice()
+            self.player_poses[1] = self.ai.get_pose_choice()
+
     
     def both_players_posed(self):
         return self.player_poses[0] != '' and self.player_poses[1] != ''
@@ -336,11 +272,11 @@ class RPSGame(Listener):
         self.state = 'post game'
         self.set_json_var('game_state', 'post game')
         winner = 0
-        if (self.pose_p1 == self.pose_p2): 
+        if (self.player_poses[0] == self.player_poses[1]): 
             winner = 0
-        elif (self.pose_p1 == 'r' and self.pose_p2 == 's') or \
-             (self.pose_p1 == 's' and self.pose_p2 == 'p') or \
-             (self.pose_p1 == 'p' and self.pose_p2 == 'r'):
+        elif (self.player_poses[0] == 'r' and self.player_poses[1] == 's') or \
+             (self.player_poses[0] == 's' and self.player_poses[1] == 'p') or \
+             (self.player_poses[0] == 'p' and self.player_poses[1] == 'r'):
              # game player 1
              winner = 1
         else:
@@ -348,13 +284,13 @@ class RPSGame(Listener):
             winner = 2        
             
         outcome = 'w' if winner == 2 else ('l' if winner == 1 else 'd')
-        ai.update_with_game_outcome(self.pose_p2, self.pose_p1, outcome)
+        ai.update_with_game_outcome(self.player_poses[1], self.player_poses[0], outcome)
                   
         if winner != 0: give_game(winner)
             
     def give_game(self, player_num):
         
-        print 'give game to player', player_num
+        print('give game to player' + str(player_num))
         
         # scores
         self.player_scores[player_num-1] += 1
@@ -387,11 +323,12 @@ class RPSGame(Listener):
             self.start_new_match()
             
     def set_json_var(self, id, value):      
-        with open('data.json', 'r+') as f:
-            data = json.load(f)
-            data[id] = value # <--- add `id` value.
-            f.seek(0)        # <--- should reset file position to the beginning.
-            json.dump(data, f, indent=4)
+        pass
+        #with open('data.json', 'r+') as f:
+            #data = json.load(f)
+            #data[id] = value # <--- add `id` value.
+            #f.seek(0)        # <--- should reset file position to the beginning.
+            #json.dump(data, f, indent=4)
     
     def get_json_var(self, id):
         with open('data.json', 'r+') as f:
