@@ -27,6 +27,104 @@ import json
 
 import time
 
+import sys
+import random
+
+
+
+class GameInfo(object):
+    def __init__(self):
+        # poses are  'r', 'p', or 's' ('' means non existing game)
+        self.pose_ai = ''  
+        self.pose_human = ''
+        
+        # outcome is 'w', 'l', 'd' ('' means non existing game)
+        self.outcome = '' 
+    
+    def __str__(self):
+        return self.pose_ai + self.pose_human + self.outcome
+    
+class AIPlayer(object):
+    
+    def __init__(self):
+        self.debug = True
+        self.greedy_chance = 1
+        self.prev_games = []
+        self.q_matrix = dict()
+        
+
+    def random_pose(self):
+        return "rps"[int(random.random() * 3)]
+    
+    def valid_state(self, state):
+        return len(state) == 3 # <ai pose> <human pose> <outcome> <action>
+    
+    def find_greedy_pose(self, q_matrix, current_state):
+        if (not self.valid_state(current_state)) or len(q_matrix) == 0:
+            return 0, self.random_pose()
+        else:
+            # find the best pose with the current state
+            max_q = -sys.maxint - 1
+            best_pose = self.random_pose()
+            
+            for i in range(len(self.q_matrix)):
+                state = self.q_matrix.keys()[i][0:3]
+                
+                if state != current_state: continue # only look at q matrix entries with current state
+                
+                if self.q_matrix.values()[i] > max_q:
+                    max_q = self.q_matrix.values()[i]
+                    
+                    action = self.q_matrix.keys()[i][-1]
+                    best_pose = action
+                    
+            return max_q, best_pose
+    
+    def get_pose_choice(self):
+        
+        state = '' if (len(self.prev_games) == 0) else str(self.prev_games[-1])
+        pose = ''
+        
+        q_greedy, pose_greedy = self.find_greedy_pose(self.q_matrix, state)
+        
+        if self.debug: print 'Q Matrix: ', self.q_matrix
+        
+        if random.random() <= self.greedy_chance and q_greedy > 0:
+            # pick greedily
+            pose = pose_greedy
+            if self.debug: print 'picks greedy - q = ' + str(q_greedy)
+        else:
+            # pick randomly
+            pose = self.random_pose()
+            if self.debug: print 'picks random'
+            
+        return pose
+    
+    def update_with_game_outcome(self, pose_ai, pose_human, outcome):
+        game = GameInfo()
+        game.pose_ai = pose_ai
+        game.pose_human = pose_human
+        game.outcome = outcome
+        
+        #-----------------------------------------
+        # Update q matrix
+        
+        state = '' if (len(self.prev_games) == 0) else str(self.prev_games[-1])
+        
+        if (self.valid_state(state)):            
+            state_action_pair = state + game.pose_ai
+            
+            # create q_matrix entry if not yet existent
+            if not state_action_pair in self.q_matrix.keys():
+                self.q_matrix[state_action_pair] = 0
+                
+            # reward for ai pose choice given previous game
+            self.q_matrix[state_action_pair] += 1 if game.outcome == 'w' else (-1 if game.outcome == 'l' else 0)
+            
+            
+        # save game to history
+        self.prev_games.append(game)
+
 
 class Listener(libmyo.device_listener.Feed):
     """
@@ -179,6 +277,8 @@ class RPSGame(Listener):
         super(RPSGame, self).__init__()
         self.listener_changed = False
         
+        self.ai = AIPlayer()
+        
         # countdown, posing, post game, post match, main menu
         self.state = 'countdown'
         self.set_json_var('game_state', 'countdown')
@@ -211,6 +311,7 @@ class RPSGame(Listener):
             return
 
     def start_new_match(self):
+        self.ai = AIPlayer()
         self.player_scores = [0, 0]
         self.player_poses = ['','']  
         self.start_next_game() 
@@ -223,8 +324,10 @@ class RPSGame(Listener):
     def update_countdown(self, elapsed_secs):
         self.countdown_timer -= elapsed_secs
         if self.countdown_timer <= 0:
+            print 'OK pose now...'
             self.state = 'posing'
             self.set_json_var('game_state', 'posing')
+            self.player_poses[1] = ai.get_pose_choice()
     
     def both_players_posed(self):
         return self.player_poses[0] != '' and self.player_poses[1] != ''
@@ -242,10 +345,17 @@ class RPSGame(Listener):
              winner = 1
         else:
             # game player 2
-            winner = 2              
+            winner = 2        
+            
+        outcome = 'w' if winner == 2 else ('l' if winner == 1 else 'd')
+        ai.update_with_game_outcome(self.pose_p2, self.pose_p1, outcome)
+                  
         if winner != 0: give_game(winner)
             
     def give_game(self, player_num):
+        
+        print 'give game to player', player_num
+        
         # scores
         self.player_scores[player_num-1] += 1
         if self.player_scores[player_num-1] == 3:
@@ -310,7 +420,7 @@ def main():
             start_time = time.time()
             if (rps_game.listener_changed):
                 print(rps_game.p1_pose, rps_game.p2_pose)
-                listener.listener_changed=False
+                rps_game.listener_changed=False
             rps_game.update(elapsed_secs)
             
 
