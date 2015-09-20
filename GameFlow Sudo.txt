@@ -1,0 +1,35 @@
+
+Game Flow
+
+
+countdown, posing, postgame, post_match (0, 1, 2, 3)
+state = 0
+score_p1 = 0, score_p2 = 0
+pose_choice_p1 = '', pose_choice_p2 = ''
+
+main loop:
+
+	if state == 0:
+		update_countdown()
+	elif state == 1:
+		if both_players_posed():
+			decide_outcome()
+	elif state == 2:
+		update_postgame()
+	
+	
+decide_outcome()
+	update scores based on pose choices
+	if <player_num> has 3 points, give_match(player_num)
+	
+	
+give_match(player_num)
+	state = 3
+	show match over graphics, (stats) (new game against AI button)
+
+update_postgame()
+	timer stuff
+	on timer done, start_countdown()
+	
+start_countdown()
+	state = 0
