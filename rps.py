@@ -24,7 +24,6 @@ import myo as libmyo; libmyo.init()
 import time
 import sys
 
-
 class Listener(libmyo.device_listener.Feed):
     """
     Listener implementation. Return False from any function to
@@ -44,6 +43,12 @@ class Listener(libmyo.device_listener.Feed):
         self.last_time = 0
         self.player1 = None
         self.player2 = None
+        self.p1_pose = None
+        self.p2_pose = None
+        self.p1_hist = []
+        self.p2_hist = []
+        self.changed = False
+
     def output(self):
         ctime = time.time()
         if (ctime - self.last_time) < self.interval:
@@ -70,10 +75,10 @@ class Listener(libmyo.device_listener.Feed):
         myo.request_rssi()
         myo.request_battery_level()
         if not self.player1:
-            print("set player1 ")
+            print("connected player1 ")
             self.player1 = myo.value;
         elif not self.player2:
-            print("set player 2")
+            print("connected player 2")
             self.player2 = myo.value;
 
     def on_rssi(self, myo, timestamp, rssi):
@@ -81,12 +86,26 @@ class Listener(libmyo.device_listener.Feed):
 
     def on_pose(self, myo, timestamp, pose):
         self.pose = pose
-        myo.vibrate('short')
-        if myo.value == self.player1:
-            print("Player1", pose)
-        elif myo.value == self.player2:
-            print("player2", pose)
-        
+        if pose == "fingers_spread":
+            pose = "P"
+        elif pose == "fist":
+            pose = "R"
+        elif pose == "wave_in":
+            pose = "S"
+        else:
+            return
+
+        if  myo.value == self.player1 and not self.p1_pose:
+            self.p1_pose = pose
+            self.p1_hist.append(pose)
+            self.changed=True
+            myo.vibrate('short')
+
+        elif myo.value == self.player2 and not self.p2_pose:
+            self.p2_pose = pose
+            self.p2_hist.append(pose)
+            myo.vibrate('short')
+            self.changed=True
 
     def on_orientation_data(self, myo, timestamp, orientation):
         self.orientation = orientation
@@ -167,15 +186,52 @@ def main():
     # Listen to keyboard interrupts and stop the hub in that case.
     try:
         while hub.running:
-            print(listener.get_devices())
-            time.sleep(0.25)
+            if (listener.changed):
+                print(listener.p1_pose, listener.p2_pose)
+                listener.changed=False
+            if listener.p1_pose and listener.p2_pose:
+                print("checking")
+                winner = check_win(listener.p1_pose, listener.p2_pose)
+                if winner == 1:
+                    print("Player 1 wins")
+                elif winner == -1:
+                    print("Player 2 wins")
+                elif winner == 0:
+                    print("Tie!")
+                listener.p1_pose = None
+                listener.p2_pose = None
+                print(listener.p1_hist)
+                print(listener.p2_hist)
+
     except KeyboardInterrupt:
         print("\nQuitting ...")
     finally:
         print("Shutting down hub...")
         hub.shutdown()
 
-
+def check_win(p1, p2):
+    if p1 == "R":
+        if p2 == "R":
+            return 0
+        elif p2 == "P":
+            return -1
+        elif p2 == "S":
+            return 1
+    elif p1 == "P":
+        if p2 == "R":
+            return 1
+        elif p2 == "P":
+            return 0
+        elif p2 == "S":
+            return -1
+    elif p1 == "S":
+        if p2 == "R":
+            return -1
+        elif p2 == "P":
+            return 1
+        elif p2 == "S":
+            return 0
+        
 if __name__ == '__main__':
     main()
 
