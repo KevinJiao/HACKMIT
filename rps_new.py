@@ -159,7 +159,8 @@ class RPSGame(Listener):
         self.listener_changed = False
         
         # countdown, posing, post game, post match, main menu
-        self.state = 'countdown'
+        self.self.state = 'countdown'
+        set_json_var('game_state', 'countdown')
         
         self.player_scores = [0, 0]
         self.player_poses = ['','']
@@ -173,16 +174,16 @@ class RPSGame(Listener):
         
         
     def update(self, elapsed_secs):
-        if state == 'countdown':      # Countdown
+        if self.state == 'countdown':      # Countdown
             pass
-        elif state == 'posing':    # Posing
+        elif self.state == 'posing':    # Posing
             if self.both_players_posed():
                 self.decide_outcome()    
-        elif state == 'post game':    # Post Game
+        elif self.state == 'post game':    # Post Game
             self.update_postgame()
-        elif state == 'post match':    # Post Match
+        elif self.state == 'post match':    # Post Match
             self.update_post_match()
-        elif state == 'main menu':    # Main Menu
+        elif self.state == 'main menu':    # Main Menu
             pass
 
 
@@ -215,7 +216,8 @@ class RPSGame(Listener):
         self.start_next_game() 
 
     def start_next_game(self):
-        state = 'countdown'
+        self.state = 'countdown'
+        set_json_var('game_state', 'countdown')
         self.countdown_timer = self.countdown_timer_max
     
     def update_countdown(self, elapsed_secs):
@@ -224,13 +226,16 @@ class RPSGame(Listener):
         
         self.countdown_timer -= elapsed_secs
         if self.countdown_timer <= 0:
-            state = 'posing'
+            self.state = 'posing'
+            set_json_var('game_state', 'posing')
     
     def both_players_posed(self):
         return self.pose_p1 != '' and self.pose_p2 != ''
     
     def decide_outcome(self):
-        state = 'post game'
+        self.state = 'post game'
+        set_json_var('game_state', 'post game')
+        
         winner = 0
         if (self.pose_p1 == self.pose_p2) winner = 0
         elif (self.pose_p1 == 'r' and self.pose_p2 == 's') or \
@@ -255,12 +260,14 @@ class RPSGame(Listener):
             return
         
         # start post_game
-        state = 'post game'
+        self.state = 'post game'
+        set_json_var('game_state', 'post game')
         self.countdown_timer = self.time_intergame
         
     def give_match(self, player_num):
         print 'match player', player_num
-        state = 'post match'
+        self.state = 'post match'
+        set_json_var('game_state', 'post match')
             
     def update_postgame(self, elapsed_secs):
         
@@ -272,13 +279,27 @@ class RPSGame(Listener):
             
     def update_post_match(self):
         # query Json for state change
-        pass
+        if self.get_json_var('game_state') == 'main menu' 
+        self.state = 'main menu'
+        set_json_var('game_state', 'main menu')
     
     def update_main_menu(self):
         # query Json for state change
-        pass
+        if self.get_json_var('game_state') == 'countdown' 
+        self.start_new_match()
             
+    def set_json_var(self, id, value):      
+        with open('data.json', 'r+') as f:
+            data = json.load(f)
+            data[id] = value # <--- add `id` value.
+            f.seek(0)        # <--- should reset file position to the beginning.
+            json.dump(data, f, indent=4)
             
+    def get_json_var(self, id):
+        with open('data.json', 'r+') as f:
+            data = json.load(f)
+            return data[id]
+
 
 
 def main():
