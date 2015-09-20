@@ -30,17 +30,8 @@ class Listener(libmyo.device_listener.Feed):
     stop the Hub.
     """
 
-    interval = 0.05  # Output only 0.05 seconds
-
     def __init__(self):
         super(Listener, self).__init__()
-        self.orientation = None
-        self.pose = libmyo.Pose.rest
-        self.emg_enabled = False
-        self.locked = False
-        self.rssi = None
-        self.emg = None
-        self.last_time = 0
         self.player1 = None
         self.player2 = None
         self.p1_pose = None
@@ -48,43 +39,29 @@ class Listener(libmyo.device_listener.Feed):
         self.p1_hist = []
         self.p2_hist = []
         self.changed = False
-
-    def output(self):
-        ctime = time.time()
-        if (ctime - self.last_time) < self.interval:
-            return
-        self.last_time = ctime
-
-        parts = []
-        if self.orientation:
-            for comp in self.orientation:
-                parts.append(str(comp).ljust(15))
-        parts.append(str(self.pose).ljust(10))
-        parts.append('E' if self.emg_enabled else ' ')
-        parts.append('L' if self.locked else ' ')
-        parts.append(self.rssi or 'NORSSI')
-        if self.emg:
-            for comp in self.emg:
-                parts.append(str(comp).ljust(5))
-        print('\r' + ''.join('[{0}]'.format(p) for p in parts), end='')
-        sys.stdout.flush()
+        self.one_win = False
+        self.two_win = False
+        self.round_num = 1
 
     def on_connect(self, myo, timestamp, firmware_version):
-        myo.vibrate('short')
-        myo.vibrate('short')
-        myo.request_rssi()
-        myo.request_battery_level()
-        if not self.player1:
-            print("connected player1 ")
-            self.player1 = myo.value;
-        elif not self.player2:
-            print("connected player 2")
-            self.player2 = myo.value;
 
-    def on_rssi(self, myo, timestamp, rssi):
-        self.rssi = rssi
+        #signal connection
+        if not self.player1:
+            self.player1 = myo.value;
+            if myo.value == self.player1:
+                notify_connection(myo)
+                print("connected player1 ")
+        elif not self.player2:
+            self.player2 = myo.value;
+            if myo.value == self.player2:
+                notify_connection(myo)
+                print("connected player 2")
 
     def on_pose(self, myo, timestamp, pose):
+
+        print(self.round_num)
+
+        #determine pose
         self.pose = pose
         if pose == "fingers_spread":
             pose = "P"
@@ -95,114 +72,97 @@ class Listener(libmyo.device_listener.Feed):
         else:
             return
 
+        #set pose and update history
         if  myo.value == self.player1 and not self.p1_pose:
             self.p1_pose = pose
             self.p1_hist.append(pose)
             self.changed=True
-            myo.vibrate('short')
 
         elif myo.value == self.player2 and not self.p2_pose:
             self.p2_pose = pose
             self.p2_hist.append(pose)
-            myo.vibrate('short')
             self.changed=True
 
-    def on_orientation_data(self, myo, timestamp, orientation):
-        self.orientation = orientation
+        #print
+        if (self.changed) and self.p1_pose and self.p2_pose:
+            print(self.p1_pose, self.p2_pose)
+            #reset
+            self.changed=False
+            self.round_num += 1
 
-    def on_accelerometor_data(self, myo, timestamp, acceleration):
-        pass
+        #determine winner
+        if self.p1_pose and self.p2_pose:
+            winner = check_win(self.p1_pose, self.p2_pose)
+            if winner == 1 :
+                self.one_win = True
+            elif winner == -1:
+                self.two_win = True
+            elif winner == 0:
+                print("Tie!")
 
-    def on_gyroscope_data(self, myo, timestamp, gyroscope):
-        pass
+            #reset
+            self.p1_pose = None
+            self.p2_pose = None
 
-    def on_emg_data(self, myo, timestamp, emg):
-        self.emg = emg
-
-    def on_unlock(self, myo, timestamp):
-        self.locked = False
-
-    def on_lock(self, myo, timestamp):
-        self.locked = True
-
-    def on_event(self, kind, event):
-        """
-        Called before any of the event callbacks.
-        """
-
-    def on_event_finished(self, kind, event):
-        """
-        Called after the respective event callbacks have been
-        invoked. This method is *always* triggered, even if one of
-        the callbacks requested the stop of the Hub.
-        """
-
-    def on_pair(self, myo, timestamp, firmware_version):
-        """
-        Called when a Myo armband is paired.
-        """
-
-    def on_unpair(self, myo, timestamp):
-        """
-        Called when a Myo armband is unpaired.
-        """
-
-    def on_disconnect(self, myo, timestamp):
-        """
-        Called when a Myo is disconnected.
-        """
-
-    def on_arm_sync(self, myo, timestamp, arm, x_direction, rotation,
-                    warmup_state):
-        """
-        Called when a Myo armband and an arm is synced.
-        """
-    def on_arm_unsync(self, myo, timestamp):
-        """
-        Called when a Myo armband and an arm is unsynced.
-        """
-
-    def on_battery_level_received(self, myo, timestamp, level):
-        """
-        Called when the requested battery level received.
-        """
-
-    def on_warmup_completed(self, myo, timestamp, warmup_result):
-        """
-        Called when the warmup completed.
-        """
+        #signal win/loss
+        if myo.value == self.player1:
+            if self.one_win:
+                win(myo)
+                self.one_win = False
+                print("player 1 won")
+            else:
+                lose(myo)
+                print("player 1 lost")
+        if myo.value == self.player2:
+            if self.two_win:
+                win(myo)
+                self.two_win = False;
+                print("player 2 won")
+            else:
+                lose(myo)
+                print("player2 lost")
 
 
+
+
+        
+
+def lose(myo):
+    myo.vibrate('long')
+    myo.vibrate('long')
+
+def win(myo):
+    myo.vibrate('short')
+    time.sleep(0.5)
+    myo.vibrate('short')
+    time.sleep(0.5)
+    myo.vibrate('short')
+    time.sleep(0.5)
+    myo.vibrate('short')
+    time.sleep(0.5) 
+    myo.vibrate('short')
+    time.sleep(0.5)
+
+def notify_connection(myo):
+    myo.vibrate('short')
+    time.sleep(1)
+    myo.vibrate('long')
+    time.sleep(1)
+    myo.vibrate('short')
+
+def tie(myo):
+    myo.vibrate('short')
+
+        
 def main():
-    print("Connecting to Myo ... Use CTRL^C to exit.")
-    print("If nothing happens, make sure the Bluetooth adapter is plugged in,")
-    print("Myo Connect is running and your Myo is put on.")
-    
-    #feed = libmyo.device_listener.Feed()
     listener = Listener()
     hub = libmyo.Hub()
     hub.set_locking_policy(libmyo.LockingPolicy.none)
     hub.run(1000, listener)
-    # Listen to keyboard interrupts and stop the hub in that case.
+
     try:
         while hub.running:
-            if (listener.changed):
-                print(listener.p1_pose, listener.p2_pose)
-                listener.changed=False
-            if listener.p1_pose and listener.p2_pose:
-                print("checking")
-                winner = check_win(listener.p1_pose, listener.p2_pose)
-                if winner == 1:
-                    print("Player 1 wins")
-                elif winner == -1:
-                    print("Player 2 wins")
-                elif winner == 0:
-                    print("Tie!")
-                listener.p1_pose = None
-                listener.p2_pose = None
-                print(listener.p1_hist)
-                print(listener.p2_hist)
-
+            pass
     except KeyboardInterrupt:
         print("\nQuitting ...")
     finally:
