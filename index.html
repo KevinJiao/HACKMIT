@@ -27,28 +27,32 @@
       });
       var Scoreboard = React.createClass({
         getInitialState: function(){
-          return({data:[0,0]});
+          return({  
+            "score_p1": 0, 
+            "score_p2": 0
+          });
         },  
-        componentDidMount: function(){
+        componentWillMount: function(){
+          console.log(this.state);
           setInterval(this.updateScore, 500);
         },
         render: function(){
           return(
             <div className="container col s12 m12 l12">
               <div className="row">
-                <ScoreCard player="1" score = {this.state.data[0]}/>
-                <ScoreCard player="2" score = {this.state.data[1]}/>
+                <ScoreCard player="1" score = {this.state.score_p1}/>
+                <ScoreCard player="2" score = {this.state.score_p2}/>
               </div>
             </div>
           )
         }, 
         updateScore: function(){
           $.ajax({
-            url: "scores.json",
+            url: "data.json",
             dataType: 'json',
             cache: false,
             success: function(data) {
-              this.setState({data: data});
+              this.setState(data);
             }.bind(this),
             error: function(xhr, status, err) {
               console.error(this.props.url, status, err.toString());
@@ -80,7 +84,7 @@
           return(
             <div>
               <NavBar />
-                <Scoreboard />
+              <Scoreboard />
             </div>
           )
         }
