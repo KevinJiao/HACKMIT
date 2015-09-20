@@ -16,7 +16,11 @@
     <div id="container">
     </div>
     <script type="text/jsx">
+<<<<<<< HEAD
      ResetScore = function(){
+=======
+      ResetScore = function(){
+>>>>>>> bd52fdd01a667522a1994b5136516fa804165dde
          $.ajax({
             url: "reset",
             dataType: 'json',
@@ -26,11 +30,12 @@
               console.log(data)
             }.bind(this),
             error: function(xhr, status, err) {
-              console.error(this.props.url, status, err.toString());
+              console.error(err);
             }.bind(this)
           });
       }
       var NavBar = React.createClass({
+
         render: function() {
           return (
             <nav className="light-blue" role="navigation">

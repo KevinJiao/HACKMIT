@@ -18,7 +18,7 @@ app.add_url_rule('/', 'root', lambda: app.send_static_file('index.html'))
 @app.route('/reset', methods=['GET', 'POST'])
 def comments_handler():
     console.log("resetting")
-    if request.method == 'GET':
+    if request.method == 'POST':
 
         with open('data.json', 'r') as r:
             data = json.load(f)

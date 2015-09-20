@@ -184,7 +184,7 @@ class Listener(libmyo.device_listener.Feed):
         pose_human = pose
         #print (pose_human)
         self.player_history[0].append(pose)
-        myo.vibrate('short')
+        #myo.vibrate('short')
 
         #elif myo.value == self.id_p2:
          #   pose_ai = pose
@@ -195,17 +195,12 @@ class Listener(libmyo.device_listener.Feed):
 
 def vibrate_lose(myo):
     myo.vibrate('long')
-    myo.vibrate('long')
     
 def vibrate_win(myo):
     myo.vibrate('short')
     time.sleep(0.5)
     myo.vibrate('short')
     time.sleep(0.5)
-    myo.vibrate('short')
-    time.sleep(0.5)
-    myo.vibrate('short')
-    time.sleep(0.5) 
     myo.vibrate('short')
     time.sleep(0.5)
     
@@ -249,6 +244,8 @@ class RPSGame(Listener):
             self.update_countdown(elapsed_secs)
         elif self.state == 'posing':    # Posing
             if self.both_players_posed():
+                self.set_json_var('pose_ai', pose_ai)
+                self.set_json_var('pose_human', pose_human)
                 self.decide_outcome()    
         elif self.state == 'post game':    # Post Gameprint("connected player1 ")
             self.update_postgame(elapsed_secs)
@@ -266,8 +263,18 @@ class RPSGame(Listener):
         pose_human = ''
         pose_ai = '' 
         self.start_next_game() 
+        self.set_json_var("score_p1", 0)
+        self.set_json_var("score_p2", 0)
+        self.set_json_var('pose_ai', pose_ai)
+        self.set_json_var('pose_human', pose_human)
 
     def start_next_game(self):
+        global pose_human
+        pose_human = ''
+        pose_ai = ''
+        self.set_json_var('pose_ai', pose_ai)
+        self.set_json_var('pose_human', pose_human)
+        
         self.state = 'countdown'
         self.set_json_var('game_state', 'countdown')
         self.countdown_timer = self.countdown_timer_max
@@ -326,9 +333,9 @@ class RPSGame(Listener):
         if player_num == 2:
             self.set_json_var("score_p2", self.player_scores[player_num-1])
 
-        if self.player_scores[player_num-1] == 5:
-            self.give_match(player_num)
-            return
+        # if self.player_scores[player_num-1] == 5:
+        #     self.give_match(player_num)
+        #     return
         # start post_game
         self.state = 'post game'
         self.set_json_var('game_state', 'post game')
@@ -344,11 +351,12 @@ class RPSGame(Listener):
             self.start_next_game()
             
     def update_post_match(self):
+        pass
         # query Json for state change
-        if (self.get_json_var('game_state') == 'main menu'):
-            self.state = 'main menu'
-            self.set_json_var('game_state', 'main menu')
-    
+        if (self.get_json_var('game_state') == 'reset'):
+            #self.state = 'main menu'
+            #self.set_json_var('game_state', 'main menu')
+            self.start_new_match()
     def update_main_menu(self):
         # query Json for state change
         if (self.get_json_var('game_state') == 'countdown'):
