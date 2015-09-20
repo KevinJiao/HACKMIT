@@ -232,7 +232,7 @@ class RPSGame(Listener):
         #self.player_history = [[],[]]
         
         self.countdown_timer = 0
-        self.countdown_timer_max = 3 # seconds
+        self.countdown_timer_max = 1.5 # seconds
         self.time_intergame = 2
         
         self.start_new_match()
