@@ -43,8 +43,8 @@
           return(
             <div className="container col s12 m12 l12">
               <div className="row">
-                <ScoreCard player="Player:" score = {this.state.score_p1} input = {this.state.pose_human}/>
-                <ScoreCard player="AI:" score = {this.state.score_p2} input = {this.state.pose_ai}/>
+                <ScoreCard player="Player:" score={this.state.score_p1} input={this.state.pose_human} game_state={this.state.game_state}/>
+                <ScoreCard player="Learning AI:" score={this.state.score_p2} input={this.state.pose_ai}game_state={this.state.game_state}/>
               </div>
               <div className="row" >
               <a href="http://127.0.0.1:8801/beaker/#/session/OoBAGz" target="_blank" className="col s12 center light-blue waves-effect waves-light btn-large"><i className="material-icons right">assessment</i>View Statistics</a>
@@ -62,7 +62,7 @@
               if (data.score_p1 > this.state.score_p1 ){
                 Materialize.toast("Player won!", 4000);
               }else if (data.score_p2 > this.state.score_p2){
-                Materialize.toast("AI won!", 4000);
+                Materialize.toast("Learning AI won!", 4000);
               }
               this.setState(data);
             }.bind(this),
@@ -79,7 +79,7 @@
             <div className="col s6 m6 l6">
               <div className="card cyan z-depth-3">
                 <div className="card-content white-text activator">
-                  <span className="card-title activator">{this.props.player} {this.props.input ? this.parse(this.props.input) : 'Awaiting input'}</span>
+                  <span className="card-title activator">{this.props.player} {this.props.input ? this.parse(this.props.input) : this.getInput()}</span>
                   <p style={{fontSize:'500%'}}>{this.props.score}</p>
                 </div>              
               </div>
@@ -93,6 +93,13 @@
             return "Paper";
           } else {
             return "Scissors";
+          }
+        },
+        getInput: function(){
+          if (this.props.game_state=="posing"){
+            return "Awaiting input";
+          } else {
+            return "";
           }
         }
       });
