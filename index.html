@@ -16,6 +16,20 @@
     <div id="container">
     </div>
     <script type="text/jsx">
+     ResetScore = function(){
+         $.ajax({
+            url: "reset",
+            dataType: 'json',
+            type: 'POST',
+            cache: false,
+            success: function(data) {
+              console.log(data)
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+            }.bind(this)
+          });
+      }
       var NavBar = React.createClass({
         render: function() {
           return (
@@ -30,24 +44,26 @@
         getInitialState: function(){
           return({  
             "score_p1": 0, 
-            "score_p2": 0
+            "score_p2": 0,
+            "pose_ai":'',
+            "pose_human":''
           });
         },  
         componentWillMount: function(){
           console.log(this.state);
-          setInterval(this.updateScore, 500);
+          setInterval(this.update, 500);
         },
         render: function(){
           return(
             <div className="container col s12 m12 l12">
               <div className="row">
-                <ScoreCard player="Player" score = {this.state.score_p1}/>
-                <ScoreCard player="AI" score = {this.state.score_p2}/>
+                <ScoreCard player="Player:" score = {this.state.score_p1} input = {this.state.pose_human}/>
+                <ScoreCard player="AI:" score = {this.state.score_p2} input = {this.state.pose_ai}/>
               </div>
             </div>
           )
         }, 
-        updateScore: function(){
+        update: function(){
           $.ajax({
             url: "data.json",
             dataType: 'json',
@@ -68,7 +84,7 @@
             <div className="col s6 m6 l6">
               <div className="card cyan z-depth-3">
                 <div className="card-content white-text activator">
-                  <span className="card-title activator">{this.props.player}</span>
+                  <span className="card-title activator">{this.props.player} {this.props.input ? this.props.input : 'Awaiting input'}</span>
                   <p style={{fontSize:'500%'}}>{this.props.score}</p>
                 </div>              
               </div>
@@ -95,20 +111,7 @@
       })
       React.render(<App />, document.getElementById('container'));
 
-      ResetScore = function(){
-         $.ajax({
-            url: "reset",
-            dataType: 'json',
-            type: 'POST',
-            cache: false,
-            success: function(data) {
-              console.log(data)
-            }.bind(this),
-            error: function(xhr, status, err) {
-              console.error(this.props.url, status, err.toString());
-            }.bind(this)
-          });
-      }
+     
     </script>
   </body>
 </html>

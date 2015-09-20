@@ -1,4 +1,4 @@
-# This file provided by Facebook is for non-commercial testing and evaluation
+# This file provided by Facebook is for non-comm/rcial testing and evaluation
 # purposes only. Facebook reserves all rights not expressly granted.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -15,9 +15,9 @@ from flask import Flask, Response, request
 app = Flask(__name__, static_url_path='', static_folder='')
 app.add_url_rule('/', 'root', lambda: app.send_static_file('index.html'))
 
-@app.route('#reset', methods=['GET', 'POST'])
+@app.route('/reset', methods=['GET', 'POST'])
 def comments_handler():
-	console.log("resetting")
+    console.log("resetting")
     if request.method == 'GET':
 
         with open('data.json', 'r') as r:
